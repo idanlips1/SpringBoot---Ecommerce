@@ -53,7 +53,7 @@ public class ProductController {
                                                                    @RequestParam(name = "pageSize",defaultValue = AppConstants.PAGE_SIZE)Integer pageSize,
                                                                    @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PRODUCTS_BY,required = false) String sortBy,
                                                                    @RequestParam(name = "sortOrder",defaultValue = AppConstants.SORT_DIR,required = false) String sortOrder){
-        ProductResponse productResponse = productService.searchByKeyword(keyword);
+        ProductResponse productResponse = productService.searchByKeyword(keyword,pageNumber,pageSize,sortBy,sortOrder);
         return new ResponseEntity<>(productResponse,HttpStatus.OK);
     }
 

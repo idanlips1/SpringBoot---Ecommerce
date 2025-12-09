@@ -118,9 +118,15 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponse searchByKeyword(String keyword) {
+    public ProductResponse searchByKeyword(String keyword,Integer pageNumber, Integer pageSize,String sortBy, String sortOrder) {
+        Sort sortByOrder = sortOrder.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
         // product size is 0
-        List<Product> products = productRepository.findByProductNameLikeIgnoreCase('%' + keyword + '%');
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByOrder);
+        Page<Product> productPage = productRepository.findByProductNameLikeIgnoreCase('%' + keyword + '%',pageDetails);
+        List<Product> products = productPage.getContent();
+
         if (products.isEmpty()){
             throw new APIException("No products found for this keyword");
         }
@@ -129,6 +135,11 @@ public class ProductServiceImpl implements ProductService {
                         .map(product, ProductDTO.class)).toList();
         ProductResponse productResponse = new ProductResponse();
         productResponse.setContent(productDTOS);
+        productResponse.setPageNumber(productPage.getNumber());
+        productResponse.setPageSize(productPage.getSize());
+        productResponse.setTotalPages(productPage.getTotalPages());
+        productResponse.setTotalElements(productPage.getNumberOfElements());
+        productResponse.setLastPage(productPage.isLast());
 
         return productResponse;
     }
