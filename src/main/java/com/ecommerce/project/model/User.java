@@ -40,7 +40,13 @@ public class User {
     @Email
     @Column(name = "email")
     private String email;
-
+    
+    @Getter
+    @Setter
+    @ManyToMany(cascade ={ CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"),
+                inverseJoinColumns = @JoinColumn(name= "role_id"))
+    private Set<Role> roles = new HashSet<>();
 
     public User(String username, String password, String email) {
         this.username = username;
@@ -48,12 +54,7 @@ public class User {
         this.email = email;
     }
 
-    @Getter
-    @Setter
-    @ManyToMany(cascade ={ CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
-    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"),
-                inverseJoinColumns = @JoinColumn(name= "role_id"))
-    private Set<Role> roles = new HashSet<>();
+    
 
     @OneToMany(mappedBy = "user",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE},
