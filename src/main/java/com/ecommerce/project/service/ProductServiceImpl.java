@@ -2,10 +2,12 @@ package com.ecommerce.project.service;
 
 import com.ecommerce.project.exceptions.APIException;
 import com.ecommerce.project.exceptions.ResourceNotFoundException;
+import com.ecommerce.project.model.Cart;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.model.Product;
 import com.ecommerce.project.payload.ProductDTO;
 import com.ecommerce.project.payload.ProductResponse;
+import com.ecommerce.project.repositories.CartRepository;
 import com.ecommerce.project.repositories.CategoryRepository;
 import com.ecommerce.project.repositories.ProductRepository;
 import org.modelmapper.ModelMapper;
@@ -36,6 +38,10 @@ public class ProductServiceImpl implements ProductService {
     private ProductRepository productRepository;
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private CartRepository cartRepository;
+    @Autowired
+    private CartService cartService;
 
     private final String path = System.getProperty("user.dir") + File.separator + "images";
 
@@ -163,6 +169,10 @@ public class ProductServiceImpl implements ProductService {
 
         // save to database
         Product savedProduct = productRepository.save(productFromDb);
+
+        // Keep every cart holding this product in sync with its new price
+        List<Cart> carts = cartRepository.findCartsByProductId(productId);
+        carts.forEach(cart -> cartService.updateProductInCarts(cart.getCartId(), productId));
 
         // Map to DTO
         return modelMapper.map(savedProduct, ProductDTO.class);
