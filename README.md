@@ -1,8 +1,8 @@
-# sb-ecom — Spring Boot E-commerce API
+# Spring Boot E-commerce API
 
-> **Status:** 🚧 Currently under active development
+> **Status:** Functional learning project — suitable for local development, not production hardened.
 
-A RESTful e-commerce API built with Spring Boot, featuring category and product management, JWT-based security scaffolding, and comprehensive error handling.
+A RESTful e-commerce backend built with Spring Boot. It supports product catalog management, user registration and sign-in, JWT authentication, shopping carts, addresses, and order placement backed by PostgreSQL.
 
 ---
 
@@ -10,21 +10,20 @@ A RESTful e-commerce API built with Spring Boot, featuring category and product 
 
 - [Overview](#overview)
 - [Tech Stack](#tech-stack)
-- [Features](#features)
+- [Implemented Features](#implemented-features)
 - [Domain Models](#domain-models)
 - [API Endpoints](#api-endpoints)
-- [Security Module](#security-module)
+- [Security Notes](#security-notes)
 - [Project Structure](#project-structure)
-- [Setup & Configuration](#setup--configuration)
-- [Development Notes](#development-notes)
+- [Run Locally](#run-locally)
+- [Configuration](#configuration)
+- [Current Limitations](#current-limitations)
 
 ---
 
 ## Overview
 
-This project is a work-in-progress e-commerce backend API that provides endpoints for managing categories and products. The application includes pagination, sorting, search functionality, file upload capabilities, and a foundation for JWT-based authentication.
-
-**Current Focus:** Core CRUD operations for categories and products, with security infrastructure being developed.
+The application follows a conventional Spring layered architecture: controllers expose REST endpoints, services hold business logic, repositories persist JPA entities, and DTOs separate the API contract from database models. It includes pagination, sorting, keyword search, product image updates, and token-based authentication.
 
 ---
 
@@ -44,9 +43,7 @@ This project is a work-in-progress e-commerce backend API that provides endpoint
 
 ---
 
-## Features
-
-### ✅ Implemented
+## Implemented Features
 
 - **Category Management**
   - List categories with pagination and sorting
@@ -61,23 +58,27 @@ This project is a work-in-progress e-commerce backend API that provides endpoint
   - Update and delete products
   - Upload product images
 
+- **Authentication and Users**
+  - Sign up and sign in endpoints
+  - BCrypt password hashing
+  - JWT generation and request filtering
+  - User, role, and address entities
+
+- **Shopping and Orders**
+  - Add, update, view, and remove cart items
+  - Create and manage delivery addresses
+  - Place orders with payment details
+  - View a user's orders and update order status
+
 - **Error Handling**
   - Global exception handler
   - Custom exceptions (`APIException`, `ResourceNotFoundException`)
   - Validation error responses
 
-- **Security Infrastructure** (Scaffolding)
-  - JWT utility classes
-  - Authentication token filter
-  - Unauthorized entry point handler
-  - Login request/response DTOs
-
-### 🚧 In Progress
-
-- Complete security configuration (SecurityFilterChain, UserDetailsService)
-- Authentication endpoints (login, register)
-- Password encoding
-- Role-based access control implementation
+- **Cross-cutting Concerns**
+  - Request validation and DTO mapping
+  - Global exception handling
+  - Pagination and sorting constants
 
 ---
 
@@ -163,11 +164,26 @@ This project is a work-in-progress e-commerce backend API that provides endpoint
 |--------|----------|-------------|
 | `GET` | `/api/echo?message=...` | Echo endpoint for testing |
 
+### Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/signup` | Register a user and assign roles |
+| `POST` | `/api/auth/signin` | Authenticate and receive a JWT |
+
+### Cart, Addresses, and Orders
+
+| Area | Example endpoints |
+|------|-------------------|
+| Cart | `POST /api/carts/products/{productId}/quantity/{quantity}`, `GET /api/carts/users/cart` |
+| Addresses | `POST /api/addresses`, `GET /api/users/addresses`, `PUT /api/addresses/{addressId}` |
+| Orders | `POST /api/order/users/payments/{paymentMethod}`, `GET /api/orders/users`, `GET /api/admin/orders` |
+
 ---
 
-## Security Module
+## Security Notes
 
-The security module currently contains the foundational components for JWT-based authentication:
+JWT authentication is implemented through Spring Security, a `DaoAuthenticationProvider`, BCrypt password encoding, and a request filter that extracts Bearer tokens.
 
 ### Components
 
@@ -197,14 +213,9 @@ JWT settings are configured in `application.properties`:
 - `spring.app.jwtSecret`: Secret key for signing tokens
 - `spring.app.jwtExpirationMs`: Token expiration time (default: 3600000ms = 1 hour)
 
-### Status
+### Important limitation
 
-⚠️ **Security is not fully wired yet.** The following are still needed:
-- Spring Security configuration class (`SecurityFilterChain`)
-- `UserDetailsService` implementation
-- Password encoder bean
-- Authentication controller (login/register endpoints)
-- Integration of `AuthTokenFilter` into the security filter chain
+The security configuration currently permits `/api/admin/**` routes. Roles are stored and included in authentication responses, but role-based authorization rules have not yet been enforced. Do not expose this application publicly without completing access control and other production security work.
 
 ---
 
@@ -215,9 +226,7 @@ src/main/java/com/ecommerce/project/
 ├── config/
 │   ├── AppConfig.java              # ModelMapper bean configuration
 │   └── AppConstants.java           # Pagination and sorting constants
-├── controller/
-│   ├── CategoryController.java     # Category REST endpoints
-│   └── ProductController.java      # Product REST endpoints
+├── controller/                     # Auth, catalog, cart, address, and order endpoints
 ├── exceptions/
 │   ├── APIException.java           # Custom API exception
 │   ├── MyGlobalExceptionHandler.java  # Global exception handler
@@ -227,17 +236,16 @@ src/main/java/com/ecommerce/project/
 │   ├── AppRole.java                # Role enum
 │   ├── Category.java               # Category entity
 │   ├── Product.java                # Product entity
-│   ├── Role.java                   # Role entity
-│   └── User.java                   # User entity
+│   ├── Cart.java / CartItem.java   # Shopping cart entities
+│   ├── Order.java / OrderItem.java # Order entities
+│   └── User.java / Role.java       # Authentication entities
 ├── payload/
 │   ├── APIResponse.java            # Generic API response
 │   ├── CategoryDTO.java            # Category data transfer object
 │   ├── CategoryResponse.java       # Paginated category response
 │   ├── ProductDTO.java             # Product data transfer object
 │   └── ProductResponse.java        # Paginated product response
-├── repositories/
-│   ├── CategoryRepository.java     # Category JPA repository
-│   └── ProductRepository.java      # Product JPA repository
+├── repositories/                   # Spring Data JPA repositories
 ├── security/
 │   └── jwt/
 │       ├── AuthEntryPointJwt.java  # Unauthorized handler
@@ -245,19 +253,13 @@ src/main/java/com/ecommerce/project/
 │       ├── JwtUtils.java           # JWT utility methods
 │       ├── LoginRequest.java       # Login request DTO
 │       └── LoginResponse.java     # Login response DTO
-├── service/
-│   ├── CategoryService.java        # Category service interface
-│   ├── CategoryServiceImpl.java   # Category service implementation
-│   ├── FileService.java            # File service interface
-│   ├── FileServiceImpl.java        # File service implementation
-│   ├── ProductService.java         # Product service interface
-│   └── ProductServiceImpl.java     # Product service implementation
+├── service/                        # Business services and implementations
 └── SbEcomApplication.java          # Spring Boot main class
 ```
 
 ---
 
-## Setup & Configuration
+## Run Locally
 
 ### Prerequisites
 
@@ -265,121 +267,54 @@ src/main/java/com/ecommerce/project/
 - **Maven 3.9+**
 - **PostgreSQL** (running locally or remote)
 
-### Database Setup
-
 1. Create a PostgreSQL database:
 ```sql
 CREATE DATABASE ecommerce;
 ```
 
-2. Update `src/main/resources/application.properties` with your database credentials:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce
-spring.datasource.username=your_username
-spring.datasource.password=your_password
+2. Set the required environment variables:
+
+```bash
+export DB_USERNAME=your_postgres_user
+export DB_PASSWORD=your_postgres_password
+export JWT_SECRET=your_base64_encoded_jwt_secret
 ```
 
-### Running the Application
+3. Build and start the application:
 
-1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd sb-ecom
-```
-
-2. Build the project:
-```bash
-mvn clean install
-```
-
-3. Run the application:
-```bash
-mvn spring-boot:run
+./mvnw clean test
+./mvnw spring-boot:run
 ```
 
 The application will start on `http://localhost:8080`
 
-### Configuration Files
+## Configuration
 
-⚠️ **Important:** `src/main/resources/application.properties` is git-ignored to protect sensitive configuration. Create your own `application.properties` file with the following structure:
+`application.properties` is local-only and ignored by Git. Copy the example file before running locally:
 
-```properties
-# Application
-spring.application.name=sb-ecom
-
-# Database
-spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-
-# JPA
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-
-# JWT
-spring.app.jwtSecret=your_base64_encoded_secret_key_here
-spring.app.jwtExpirationMs=3600000
-
-# Logging
-logging.level.org.springframework=DEBUG
-logging.level.org.hibernate.SQL=DEBUG
-logging.level.org.springframework.security=DEBUG
-logging.level.com.ecommerce.project=DEBUG
+```bash
+cp src/main/resources/application.properties.example src/main/resources/application.properties
 ```
 
----
+The application reads `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, and the optional `JWT_EXPIRATION_MS` from the environment. `application.properties.example` documents the expected property names without containing credentials.
 
-## Development Notes
+## Current Limitations
 
-### Current Status
+- There is only a Spring context-load test; endpoint and repository behavior are not comprehensively tested.
+- Admin routes are not role-protected yet.
+- PostgreSQL must be available locally; no Docker Compose setup is included.
+- Product images use local storage, so a deployment would need a durable object-storage strategy.
 
-- ✅ Core CRUD operations for categories and products
-- ✅ Pagination and sorting
-- ✅ Search functionality (by category and keyword)
-- ✅ File upload for product images
-- ✅ Global exception handling
-- ✅ Request validation
-- 🚧 Security configuration (JWT utilities ready, but not fully integrated)
-- 🚧 User authentication endpoints
-- 🚧 Role-based access control
+## Key Takeaways
 
-### Next Steps
-
-1. Complete security configuration:
-   - Implement `SecurityFilterChain`
-   - Create `UserDetailsService` implementation
-   - Add password encoder
-   - Create authentication controller
-
-2. Add user management:
-   - Registration endpoint
-   - Login endpoint
-   - User profile management
-
-3. Enhance product features:
-   - Product reviews/ratings
-   - Inventory management
-   - Product variants
-
-4. Add order management:
-   - Shopping cart
-   - Order creation and tracking
-   - Payment integration
-
-### Known Issues
-
-- Security filter chain not configured (JWT filter not active)
-- No authentication endpoints yet
-- Product image upload path needs configuration
+- Building a layered Spring application with controllers, services, repositories, entities, and DTOs.
+- Implementing JWT-based authentication and BCrypt password hashing.
+- Modeling carts, orders, payments, addresses, products, and roles with JPA.
+- Designing paginated REST endpoints and centralized error handling.
 
 ---
 
 ## License
 
-TBD
-
----
-
-**Note:** This project is actively being developed. Features and APIs may change. Check the commit history for the latest updates.
+No license has been specified for this repository.

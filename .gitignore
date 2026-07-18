@@ -34,3 +34,8 @@ build/
 
 # Local config
 src/main/resources/application.properties
+src/main/resources/application-local.properties
+.env
+.claude/
+.cursor/
+**/.DS_Store

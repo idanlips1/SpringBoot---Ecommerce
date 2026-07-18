@@ -1,0 +1,20 @@
+spring.application.name=sb-ecom
+
+# PostgreSQL
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/ecommerce}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+
+# JPA
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+# JWT
+spring.app.jwtSecret=${JWT_SECRET}
+spring.app.jwtExpirationMs=${JWT_EXPIRATION_MS:3600000}
+
+# Logging
+logging.level.org.springframework=INFO
+logging.level.org.hibernate.SQL=INFO
+logging.level.org.springframework.security=INFO
+logging.level.com.ecommerce.project=INFO
